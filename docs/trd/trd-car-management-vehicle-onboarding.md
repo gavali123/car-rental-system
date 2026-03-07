@@ -21,6 +21,7 @@
    - [Vehicle Entity](#vehicle-entity)
    - [Vehicle Insurance Entity](#vehicle-insurance-entity)
    - [Entity Relationships](#entity-relationships)
+   - [Full Database Design](#full-database-design)
 4. [API Design](#api-design)
    - [Register New Vehicle](#register-new-vehicle)
    - [Get Vehicle Details](#get-vehicle-details)
@@ -144,6 +145,12 @@ vehicles (1) ──── (0..*) vehicle_insurance
 |---|---|---|
 | `vehicles` → `vehicle_insurance` | One-to-Many | A vehicle has one current (active) insurance record. Historical records are retained with `is_active = FALSE`. |
 | `vehicles` → `locations` | Many-to-One | A vehicle belongs to one home location at a time. The location record is managed by the Location module. |
+
+### Full Database Design
+
+For the complete database schema including all column types, check constraints, index definitions, foreign key rules, and design rationale, refer to the dedicated database design document:
+
+📄 [Database Design - Vehicle Onboarding](./db-design-car-management-vehicle-onboarding.md)
 
 ---
 
