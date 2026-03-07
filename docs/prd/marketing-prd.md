@@ -12,6 +12,45 @@
 
 ---
 
+## Table of Contents
+
+1. [Executive Summary](#1-executive-summary)
+2. [Business Objectives](#2-business-objectives)
+3. [Target Customer Segments](#3-target-customer-segments)
+4. [Functional Requirements](#4-functional-requirements)
+   - 4.1 [Promotions & Campaign Management](#41-promotions--campaign-management)
+     - 4.1.1 [Promotional Types](#411-promotional-types)
+     - 4.1.2 [Promotional Rule Engine](#412-promotional-rule-engine)
+     - 4.1.3 [Campaign Workflow](#413-campaign-workflow)
+   - 4.2 [Loyalty Program](#42-loyalty-program)
+     - 4.2.1 [Tiered Program Structure](#421-tiered-program-structure)
+     - 4.2.2 [Points Earning Rules](#422-points-earning-rules)
+     - 4.2.3 [Points Redemption Rules](#423-points-redemption-rules)
+   - 4.3 [Customer Segmentation](#43-customer-segmentation)
+   - 4.4 [CRM & Platform Integrations](#44-crm--platform-integrations)
+   - 4.5 [Marketing Analytics & KPIs](#45-marketing-analytics--kpis)
+   - 4.6 [Data Freshness & Reporting](#46-data-freshness--reporting)
+   - 4.7 [Communication Channels & Customer Consent](#47-communication-channels--customer-consent)
+     - 4.7.1 [Supported Channels](#471-supported-channels)
+     - 4.7.2 [Consent Management](#472-consent-management)
+   - 4.8 [A/B Testing](#48-ab-testing)
+   - 4.9 [Personalization](#49-personalization)
+   - 4.10 [Promotional Abuse Detection](#410-promotional-abuse-detection)
+   - 4.11 [Alerts & Automated Notifications (Internal)](#411-alerts--automated-notifications-internal)
+5. [Non-Functional Requirements](#5-non-functional-requirements)
+   - 5.1 [Data Privacy & Compliance](#51-data-privacy--compliance)
+   - 5.2 [Brand Guidelines](#52-brand-guidelines)
+   - 5.3 [Performance & SLAs](#53-performance--slas)
+   - 5.4 [Audit Logging & Traceability](#54-audit-logging--traceability)
+   - 5.5 [Data Lifecycle & Retention](#55-data-lifecycle--retention)
+6. [Acceptance Criteria — MVP Marketing Capability](#6-acceptance-criteria--mvp-marketing-capability)
+7. [Out of Scope (MVP)](#7-out-of-scope-mvp)
+8. [Assumptions & Dependencies](#8-assumptions--dependencies)
+9. [Open Questions](#9-open-questions)
+10. [Revision History](#10-revision-history)
+
+---
+
 ## 1. Executive Summary
 
 Our company is expanding from car sales into car rental as a new line of business. This Product Requirement Document defines the functional and non-functional requirements for the **Marketing Module** of the Car Rental System. It is based on structured stakeholder interviews conducted during the requirement-analysis phase. The module enables the business to attract and retain rental customers through promotions, loyalty programs, targeted campaigns, and data-driven personalization — while complying with data-privacy regulations and brand guidelines.
