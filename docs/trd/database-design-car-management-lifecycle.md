@@ -2,6 +2,8 @@
 
 > **Canonical ownership notice:** The `vehicle_status_history` table defined in this document is the single authoritative table for recording all vehicle lifecycle status transitions. Other TRDs that involve lifecycle status changes (e.g., FR-4 Vehicle Retirement) **must reference this table** rather than defining a separate history table.
 
+> **Migration scripts:** The Flyway migration scripts that implement this database design are specified in [db-migrations-car-management-lifecycle.md](./db-migrations-car-management-lifecycle.md).
+
 ## Table of Contents
 
 1. [Entity Relationship Diagram](#entity-relationship-diagram)
