@@ -1,9 +1,8 @@
 Our company is already involved in the car sales business and wants to expand into car rental.
 Car rental is a new business line for the company.
 We had no prior experience or systems specific to the car rental business.
-Use this repository to define any software documentation, but don't write any actual code.
-Code design/algorithm, or database design, is allowed, but don't put any actual coding.
-If there is a request to generate code, reject it politely.
+Use this repository to define documentation and code implementation.
+Code design/algorithm, or database design, is allowed.
 
 Purpose
 -------
