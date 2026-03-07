@@ -52,8 +52,8 @@ FR-2 requires that fleet managers can manually update the lifecycle status of an
 
 - Lifecycle status transitions are **manual only**; no automated rule triggers a status change (e.g., the system does not automatically move a vehicle to `Maintenance` when maintenance is scheduled — that is covered by FR-19/FR-20).
 - This TRD does **not** cover the insurance expiry availability block (FR-3), which is a separate mechanism that temporarily prevents reservation assignment independent of lifecycle status.
-- This TRD does **not** cover the conflict-check warning shown when decommissioning a vehicle with active reservations (FR-4); that warning is specified in FR-4's TRD.
-- This TRD does **not** define the full `vehicles` table schema — only the `lifecycle_status` field and the `vehicle_lifecycle_histories` table are in scope here. Other vehicle attributes are defined in the FR-1 TRD.
+- This TRD does **not** cover the conflict-check warning shown when decommissioning a vehicle with active reservations (FR-4); that warning is specified in FR-4's TRD. FR-4 writes to the `vehicle_status_history` table defined here and must not define a separate duplicate history table.
+- This TRD does **not** define the full `vehicles` table schema — only the `lifecycle_status` field is in scope here. Other vehicle attributes are defined in their respective TRDs (FR-1 for onboarding fields, FR-3 for insurance fields, FR-5 for home location).
 - This TRD does **not** cover the reservation allocation engine in full; it only specifies that the engine must filter on `lifecycle_status = 'Active'`.
 - No role other than **Fleet Manager** may update the lifecycle status. Read access to status history may be granted to other roles but is not fully specified here.
 
@@ -70,7 +70,7 @@ The following tables are relevant to this TRD:
 | Table | Purpose |
 |---|---|
 | [vehicles](./database-design-car-management-lifecycle.md#vehicles) | Stores the current `lifecycle_status` of each vehicle |
-| [vehicle_lifecycle_histories](./database-design-car-management-lifecycle.md#vehicle_lifecycle_histories) | Immutable audit log of every lifecycle status transition |
+| [vehicle_status_history](./database-design-car-management-lifecycle.md#vehicle_status_history) | Immutable audit log of every lifecycle status transition (canonical table; FR-4 and other lifecycle-aware TRDs reference this table) |
 
 ---
 
@@ -129,7 +129,7 @@ Updates the lifecycle status of a single vehicle. Only fleet managers are author
     "previousStatus": "Incoming",
     "currentStatus": "Active",
     "changedAt": "2024-01-15T09:30:00Z",
-    "changedBy": "fleet.manager@company.com"
+    "changedByUserId": "uuid"
   }
   ```
 
@@ -178,7 +178,7 @@ Returns the full, ordered audit log of lifecycle status changes for a vehicle.
         "previousStatus": "Incoming",
         "newStatus": "Active",
         "changedAt": "2024-01-15T09:30:00Z",
-        "changedBy": "fleet.manager@company.com",
+        "changedByUserId": "uuid",
         "notes": "Vehicle passed pre-rental inspection."
       }
     ]
@@ -206,7 +206,7 @@ Other blocking conditions (e.g., insurance expiry block from FR-3, maintenance s
 #### Algorithm: Update Lifecycle Status
 
 ```
-FUNCTION updateLifecycleStatus(vehicleId, requestedStatus, notes, actingUser):
+FUNCTION updateLifecycleStatus(vehicleId, requestedStatus, notes, actingUserId, actingUserEmail):
 
   vehicle = fetchVehicleById(vehicleId)
   IF vehicle NOT FOUND OR vehicle.deleted = true:
@@ -227,19 +227,19 @@ FUNCTION updateLifecycleStatus(vehicleId, requestedStatus, notes, actingUser):
       RETURN 422 Unprocessable Entity ("Transition from <currentStatus> to <requestedStatus> is not permitted")
 
   BEGIN TRANSACTION
-    UPDATE vehicles SET lifecycle_status = requestedStatus, updated_at = NOW(), updated_by = actingUser
+    UPDATE vehicles SET lifecycle_status = requestedStatus, updated_at = NOW(), updated_by = actingUserEmail
       WHERE id = vehicleId
 
-    INSERT INTO vehicle_lifecycle_histories
-      (id, vehicle_id, previous_status, new_status, changed_at, changed_by, notes,
+    INSERT INTO vehicle_status_history
+      (id, vehicle_id, previous_status, new_status, changed_by_user_id, changed_at, notes,
        created_at, updated_at, created_by, updated_by, deleted)
     VALUES
-      (newUUID(), vehicleId, currentStatus, requestedStatus, NOW(), actingUser, notes,
-       NOW(), NOW(), actingUser, actingUser, false)
+      (newUUID(), vehicleId, currentStatus, requestedStatus, actingUserId, NOW(), notes,
+       NOW(), NOW(), actingUserEmail, actingUserEmail, false)
   COMMIT TRANSACTION
 
   RETURN 200 OK with { vehicleId, previousStatus: currentStatus, currentStatus: requestedStatus,
-                       changedAt: NOW(), changedBy: actingUser }
+                       changedAt: NOW(), changedByUserId: actingUserId }
 
 FUNCTION isTransitionAllowed(from, to):
   TRANSITION_MATRIX = {
@@ -273,10 +273,10 @@ sequenceDiagram
     else Transition allowed
         API->>DB: BEGIN TRANSACTION
         API->>DB: UPDATE vehicles SET lifecycle_status = requestedStatus
-        API->>DB: INSERT INTO vehicle_lifecycle_histories
+        API->>DB: INSERT INTO vehicle_status_history
         API->>DB: COMMIT TRANSACTION
         DB-->>API: success
-        API-->>FM: 200 OK (previousStatus, currentStatus, changedAt, changedBy)
+        API-->>FM: 200 OK (previousStatus, currentStatus, changedAt, changedByUserId)
     end
 ```
 
@@ -288,7 +288,7 @@ sequenceDiagram
 - An optional free-text **Notes** field must be displayed alongside the status dropdown, allowing the fleet manager to record a reason for the change.
 - On submission, the frontend must show an inline confirmation prompt before calling the API, as lifecycle status changes are significant and irreversible (especially transitions toward `Decommissioning` or `Sold`).
 - All API error responses (400, 403, 404, 422) must be surfaced as inline error messages near the status dropdown. Generic error toasts are not sufficient.
-- The lifecycle history section on the vehicle detail page must render the `vehicle_lifecycle_histories` records in reverse chronological order (most recent first) as a timeline or table.
+- The lifecycle history section on the vehicle detail page must render the `vehicle_status_history` records in reverse chronological order (most recent first) as a timeline or table.
 - The UI must be responsive and functional on desktop browsers and tablet-sized screens.
 - Frontend validation must enforce that the `status` field is present before allowing form submission; this is the only required field for this form.
 
@@ -307,8 +307,8 @@ Authorization: Bearer <token>
 
   | Claim | Type | Description |
   |---|---|---|
-  | `sub` | String | The authenticated user's unique identifier |
-  | `email` | String | The authenticated user's email address (used as `changed_by` in audit records) |
+  | `sub` | String | The authenticated user's unique identifier (used as `changed_by_user_id` in `vehicle_status_history`) |
+  | `email` | String | The authenticated user's email address (stored in audit columns `created_by` / `updated_by`) |
   | `role` | String | The authenticated user's role (e.g., `fleet_manager`, `operations_manager`) |
   | `exp` | Integer | Token expiry time as a Unix timestamp |
   | `iat` | Integer | Token issued-at time as a Unix timestamp |
@@ -320,7 +320,7 @@ Authorization: Bearer <token>
   | `PATCH /api/v1/vehicles/{vehicleId}/lifecycle-status` | `fleet_manager` |
   | `GET /api/v1/vehicles/{vehicleId}/lifecycle-history` | `fleet_manager` or `operations_manager` |
 
-- The `changed_by` field stored in `vehicle_lifecycle_histories` must be derived from the authenticated user's JWT claims (`email`), not from any client-supplied value in the request body.
+- The `changed_by_user_id` field stored in `vehicle_status_history` must be derived from the authenticated user's JWT `sub` claim, not from any client-supplied value in the request body.
 - Tokens with an expired `exp` claim must be rejected with HTTP 401.
 - Any request with a valid token but an insufficient role must be rejected with HTTP 403.
 
