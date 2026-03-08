@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: car-rental-system
+
+  # ── R2DBC (reactive database) ──────────────────────────────────────────────
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:car_rental}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    pool:
+      initial-size: 5
+      max-size: 20
+      max-idle-time: 30m
+
+  # ── Flyway (schema migrations via JDBC) ────────────────────────────────────
+  flyway:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:car_rental}
+    user: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  # ── Spring Security / OAuth2 Resource Server ───────────────────────────────
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8180/realms/car-rental}
+
+# ── Server ─────────────────────────────────────────────────────────────────
+server:
+  port: 8080
+
+# ── Application-specific properties ────────────────────────────────────────
+app:
+  security:
+    fleet-manager-role: FLEET_MANAGER
+
+# ── Logging ────────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.carrental: INFO
+    org.springframework.r2dbc: WARN
+    org.flywaydb: INFO
